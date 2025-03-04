@@ -1,6 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Hackathons from "@/components/Hackathons";
+import ICPC from "@/components/ICPC";
+import Projects from "@/components/Projects";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
@@ -14,7 +17,7 @@ export default function Dashboard() {
         const res = await fetch("/api/user");
         const data = await res.json();
         if (res.ok) {
-          setUser(data);
+          setUser(data); 
         } else {
           router.push("/login"); 
         }
@@ -32,10 +35,9 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-5">
-      {/* Logo */}
       <h1 className="text-3xl font-bold text-blue-600 mb-6">Skill-Forge</h1>
+      <p className="text-gray-600">Logged in as: <strong>{user.role}</strong></p>
 
-      {/* Tabs */}
       <div className="flex space-x-4 mb-6">
         <button
           className={`p-2 px-4 rounded ${activeTab === "hackathons" ? "bg-blue-500 text-white" : "bg-gray-200"}`}
@@ -57,24 +59,11 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* Tab Content */}
       <div className="w-full max-w-2xl bg-white p-6 rounded shadow-md">
-        {activeTab === "hackathons" && <Hackathons />}
-        {activeTab === "icpc" && <ICPC />}
-        {activeTab === "projects" && <Projects />}
+        {activeTab === "hackathons" && <Hackathons role={user.role} />}
+        {activeTab === "icpc" && <ICPC role={user.role} />}
+        {activeTab === "projects" && <Projects role={user.role} />}
       </div>
     </div>
   );
-}
-
-function Hackathons() {
-  return <p className="text-gray-700">List of upcoming hackathons will be shown here.</p>;
-}
-
-function ICPC() {
-  return <p className="text-gray-700">ICPC team selection recommendations will be shown here.</p>;
-}
-
-function Projects() {
-  return <p className="text-gray-700">Academic projects listed by professors will be shown here.</p>;
 }

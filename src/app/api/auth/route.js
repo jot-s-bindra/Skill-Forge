@@ -9,37 +9,52 @@ export async function POST(req) {
   try {
     const { uid, password } = await req.json();
 
-    const flaskResponse = await fetch("http://127.0.0.1:5112/api/student/details", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ uid, pwd: password, batch: "2025" })
-    });
-
-    const flaskData = await flaskResponse.json();
-
-    if (!flaskResponse.ok || !flaskData.data.semesters || flaskData.data.semesters.length === 0) {
-      return new Response(JSON.stringify({ message: "Invalid ERP credentials" }), { status: 401 });
-    }
-
-    const { semesters } = flaskData.data;
-
     await connectToDatabase();
+    let role = "student"; 
+    let user = await User.findOne({ uid, password });
 
-    let user = await User.findOne({ uid });
+    if (uid === "admin" && password === "admin123") role = "admin";
+    if (uid === "teacher" && password === "teacher123") role = "teacher";
+
+    let isNewUser = false;
 
     if (!user) {
-      user = new User({
-        uid,
-        password, 
-        batch: "2025",
-        semesters,
-      });
+      if (role !== "student") {
+        user = new User({ uid, password, batch: "-", role });
+        await user.save();
+      } else {
+        const flaskResponse = await fetch("http://127.0.0.1:5112/api/student/details", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ uid, pwd: password, batch: "2025" })
+        });
 
-      await user.save();
-      console.log("✅ New user stored in MongoDB:", user);
+        const flaskData = await flaskResponse.json();
+
+        if (!flaskResponse.ok || !flaskData.data.semesters || flaskData.data.semesters.length === 0) {
+          return new Response(JSON.stringify({ message: "Invalid ERP credentials" }), { status: 401 });
+        }
+
+        const { semesters } = flaskData.data;
+
+        user = new User({
+          uid,
+          password, 
+          batch: "2025",
+          role: "student",
+          semesters,
+        });
+
+        await user.save();
+        isNewUser = true; 
+      }
     }
 
-    const token = jwt.sign({ uid }, JWT_SECRET, { expiresIn: "7d" });
+    if (user.role === "student" && (!user.codeforces_id || user.preferred_techstacks.length === 0)) {
+      isNewUser = true;
+    }
+
+    const token = jwt.sign({ uid, role: user.role }, JWT_SECRET, { expiresIn: "7d" });
 
     const cookie = serialize("token", token, {
       httpOnly: true,
@@ -49,7 +64,7 @@ export async function POST(req) {
       maxAge: 7 * 24 * 60 * 60, 
     });
 
-    return new Response(JSON.stringify({ message: "Login successful", newUser: !user.codeforces_id }), {
+    return new Response(JSON.stringify({ message: "Login successful", role: user.role, newUser: isNewUser }), {
       status: 200,
       headers: { "Set-Cookie": cookie },
     });

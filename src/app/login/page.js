@@ -23,7 +23,7 @@ export default function LoginPage() {
     const data = await response.json();
 
     if (response.ok) {
-      if (data.newUser) {
+      if (data.newUser && data.role === "student") {
         router.push("/profile-setup"); 
       } else {
         router.push("/dashboard"); 
