@@ -9,7 +9,8 @@ export default function Projects({ role }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
-
+  const [partnerUid, setPartnerUid] = useState(""); 
+  const [userUid, setUserUid] = useState(""); 
   useEffect(() => {
     async function fetchProjects() {
       try {
@@ -26,7 +27,22 @@ export default function Projects({ role }) {
     }
 
     fetchProjects();
+
+    async function fetchUserUid() {
+      try {
+        const res = await fetch("/api/user");
+        const data = await res.json();
+        if (res.ok) {
+          setUserUid(data.uid); 
+        }
+      } catch (error) {
+        console.error("Error fetching user UID:", error);
+      }
+    }
+
+    fetchUserUid();
   }, []);
+
 
   const handleAddProject = async (e) => {
     e.preventDefault();
@@ -57,6 +73,46 @@ export default function Projects({ role }) {
 
     setLoading(false);
   };
+
+  const handleApply = async (projectId) => {
+    if (!partnerUid) {
+      alert("Please enter your partner's UID.");
+      return;
+    }
+  
+    setLoading(true);
+    setError("");
+  
+    const response = await fetch("/api/projects/apply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectId, partnerUid }),
+    });
+  
+    const data = await response.json();
+  
+    if (response.ok) {
+      alert("Application submitted successfully!");
+  
+      setProjects((prevProjects) =>
+        prevProjects.map((proj) =>
+          proj._id === projectId
+            ? {
+                ...proj,
+                applicants: [...(proj.applicants || []), { uid: userUid, partner_uid: partnerUid, status: "pending" }],
+              }
+            : proj
+        )
+      );
+  
+      setPartnerUid(""); 
+    } else {
+      setError(data.message || "Failed to apply for project");
+    }
+  
+    setLoading(false);
+  };
+  
 
   return (
     <div>
@@ -116,18 +172,42 @@ export default function Projects({ role }) {
         {projects.length === 0 ? (
           <p>No projects available yet.</p>
         ) : (
-          projects.map((project, index) => (
-            <div key={index} className="bg-white p-4 rounded shadow mt-2">
-              <h3 className="font-bold">{project.title}</h3>
-              <p>{project.description}</p>
-              <p className="text-sm text-gray-600">
-                <strong>Posted by:</strong> {project.createdByName || "Unknown"}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Required Tech:</strong> {project.required_techstacks.join(", ")}
-              </p>
-            </div>
-          ))
+          projects.map((project, index) => {
+            const alreadyApplied = project.applications?.some((app) => app.uid === userUid);
+
+            return (
+              <div key={index} className="bg-white p-4 rounded shadow mt-2">
+                <h3 className="font-bold">{project.title}</h3>
+                <p>{project.description}</p>
+                <p className="text-sm text-gray-600">
+                  <strong>Posted by:</strong> {project.createdByName || "Unknown"}
+                </p>
+                <p className="text-sm text-gray-600">
+                  <strong>Required Tech:</strong> {project.required_techstacks.join(", ")}
+                </p>
+
+                {role === "student" && (
+                  <div className="mt-4">
+                    <input
+                      type="text"
+                      placeholder="Enter Partner UID"
+                      value={partnerUid}
+                      onChange={(e) => setPartnerUid(e.target.value)}
+                      className="w-full p-2 border rounded mb-2"
+                      required
+                    />
+                    <button
+                      onClick={() => handleApply(project._id)}
+                      className={`p-2 rounded w-full ${alreadyApplied ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 text-white"}`}
+                      disabled={loading || alreadyApplied}
+                    >
+                      {loading ? "Applying..." : alreadyApplied ? "Already Applied" : "Apply with Partner"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
     </div>
