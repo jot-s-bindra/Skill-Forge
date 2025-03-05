@@ -121,7 +121,7 @@ export default function Projects({ role }) {
               <h3 className="font-bold">{project.title}</h3>
               <p>{project.description}</p>
               <p className="text-sm text-gray-600">
-                <strong>Posted by:</strong> {project.createdBy} {/* Teacher UID */}
+                <strong>Posted by:</strong> {project.createdByName || "Unknown"}
               </p>
               <p className="text-sm text-gray-600">
                 <strong>Required Tech:</strong> {project.required_techstacks.join(", ")}

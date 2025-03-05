@@ -4,8 +4,16 @@ const projectSchema = new mongoose.Schema({
   title: { type: String, required: true },
   description: { type: String, required: true },
   required_techstacks: { type: [String], required: true },
-  applicants: [{ uid: { type: String, ref: "User" }, team_members: [String] }],
   createdBy: { type: String, ref: "User", required: true }, 
+  applicants: [{ 
+    uid: { type: String, ref: "User" }, 
+    partner_uid: { type: String, ref: "User" }, 
+    status: { type: String, enum: ["pending", "approved", "rejected"], default: "pending" }
+  }], 
+  final_allocation: [{ 
+    uid: { type: String, ref: "User" }, 
+    partner_uid: { type: String, ref: "User" } 
+  }], 
   createdAt: { type: Date, default: Date.now },
 });
 

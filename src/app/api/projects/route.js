@@ -1,5 +1,6 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import Project from "@/models/Project";
+import User from "@/models/User"; 
 import jwt from "jsonwebtoken";
 import { parse } from "cookie";
 
@@ -45,9 +46,19 @@ export async function POST(req) {
 export async function GET() {
   try {
     await connectToDatabase();
-    const projects = await Project.find(); 
+    const projects = await Project.find();
 
-    return new Response(JSON.stringify({ projects }), { status: 200 });
+    const projectData = await Promise.all(
+      projects.map(async (project) => {
+        const teacher = await User.findOne({ uid: project.createdBy }); 
+        return {
+          ...project.toObject(),
+          createdByName: teacher ? teacher.uid : "Unknown Teacher", 
+        };
+      })
+    );
+
+    return new Response(JSON.stringify({ projects: projectData }), { status: 200 });
 
   } catch (error) {
     console.error("❌ Error fetching projects:", error);
