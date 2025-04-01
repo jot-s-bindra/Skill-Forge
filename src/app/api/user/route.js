@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { parse } from "cookie";
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_secret_key";
+const JWT_SECRET = process.env.JWT_SECRET || "mytempkey";
 
 export async function GET(req) {
   try {

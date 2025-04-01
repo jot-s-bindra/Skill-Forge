@@ -5,10 +5,9 @@ export default function StudentProjects({ projects, userUid, setProjects }) {
   const [partnerUids, setPartnerUids] = useState({});
   const [loadingProject, setLoadingProject] = useState(null);
   const [error, setError] = useState("");
-  const [aiLoadingProject, setAiLoadingProject] = useState(null); // Track AI loading per project
-  const [aiRecommendedPartners, setAiRecommendedPartners] = useState({}); // Track recommended partners per project
-  const [appliedProjects, setAppliedProjects] = useState(new Set()); // Track applied projects
-
+  const [aiLoadingProject, setAiLoadingProject] = useState(null); 
+  const [aiRecommendedPartners, setAiRecommendedPartners] = useState({}); 
+  const [appliedProjects, setAppliedProjects] = useState(new Set()); 
   const findAiPartner = async (projectId) => {
     if (appliedProjects.has(projectId)) return;
 
@@ -75,10 +74,13 @@ export default function StudentProjects({ projects, userUid, setProjects }) {
 
   return (
     <div className="mt-6">
-      {projects.length === 0 ? (
-        <p>No projects available yet.</p>
-      ) : (
-        projects.map((project) => {
+      {projects.filter((p) => (p.final_allocation?.length || 0) === 0).length === 0 ? (
+  <p>No available projects. All have been allocated.</p>
+) : (
+  projects
+    .filter((project) => (project.final_allocation?.length || 0) === 0) // ✅ Only show if not allocated
+    .map((project) => {
+
           const alreadyApplied = appliedProjects.has(project._id) || 
             project.applicants?.some((app) => app.uid === userUid);
 
@@ -91,7 +93,6 @@ export default function StudentProjects({ projects, userUid, setProjects }) {
 
               {!alreadyApplied && (
                 <div className="mt-4">
-                  {/* Partner UID Input */}
                   <input
                     type="text"
                     placeholder="Enter Partner UID"
