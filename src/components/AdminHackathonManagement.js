@@ -28,13 +28,32 @@ export default function AdminHackathonsManagement() {
   };
 
   const handleDecision = async (hackathonId, uid, partner_uid, approve = true) => {
+    const hackathon = hackathons.find(h => h._id === hackathonId);
+    const allFinalized = hackathon.final_allocation.map(pair => [pair.uid, pair.partner_uid]).flat();
+    const allPending = hackathon.applicants.map(pair => [pair.uid, pair.partner_uid]).flat();
+  
+    // Disallow duplicate approval
+    if (approve && (allFinalized.includes(uid) || allFinalized.includes(partner_uid))) {
+      alert("One of the students is already approved for this hackathon.");
+      return;
+    }
+  
+    if (approve && (
+      hackathon.applicants.filter(app => 
+        (app.uid === uid || app.partner_uid === uid || 
+         app.uid === partner_uid || app.partner_uid === partner_uid)
+      ).length > 1)) {
+      alert("Can't approve multiple pending requests involving the same user.");
+      return;
+    }
+  
     try {
       const res = await fetch("/api/hackathons/approve", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ hackathonId, uid, partner_uid, approve }),
       });
-
+  
       const data = await res.json();
       if (res.ok) {
         alert(approve ? "Approved!" : "Rejected!");
@@ -47,6 +66,7 @@ export default function AdminHackathonsManagement() {
       setError("Something went wrong.");
     }
   };
+  
 
   return (
     <div className="mt-6">

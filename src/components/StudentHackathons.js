@@ -81,9 +81,9 @@ export default function StudentHackathons({ hackathons, userUid, setHackathons }
   visibleHackathons.map((hackathon) => {
     const alreadyApplied =
     appliedHackathons.has(hackathon._id) ||
-    hackathon.applicants?.some(
-      (a) => a.uid === userUid || a.partner_uid === userUid
-    );
+    hackathon.applicants?.some(a => a.uid === userUid || a.partner_uid === userUid) ||
+    hackathon.final_allocation?.some(a => a.uid === userUid || a.partner_uid === userUid);
+  
   
 
           return (
